@@ -17,7 +17,7 @@ class Tag(models.Model):
 
 
 class Product(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=False)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
     tags = models.ManyToManyField(Tag, blank=True)
     title = models.CharField(max_length=100)
     text = models.TextField(null=True, blank=True)
