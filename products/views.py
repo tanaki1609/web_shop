@@ -1,10 +1,11 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from products.models import Product
 from products.serializers import (ProductSerializer,
                                   ProductValidateSerializer)
 from django.db import transaction
+from rest_framework.permissions import IsAuthenticated
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -36,7 +37,9 @@ def product_detail_api_view(request, id):
 
 
 @api_view(http_method_names=['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def product_list_create_api_view(request):
+    print(request.user)
     if request.method == 'GET':
         # step 1: Collect products from DB (QuerySet)
         products = Product.objects.select_related('category').prefetch_related('tags', 'reviews').all()
