@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = 'id name'.split()
+        fields = 'id name parent'.split()
 
 
 class TagSerializer(serializers.ModelSerializer):

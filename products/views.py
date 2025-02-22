@@ -1,11 +1,79 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from products.models import Product
-from products.serializers import (ProductSerializer,
+from products.models import Product, Category, Tag
+from products.serializers import (ProductSerializer, CategorySerializer,
+                                  TagSerializer,
                                   ProductValidateSerializer)
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.viewsets import ModelViewSet
+
+
+class ProductListCreateAPIView(ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = ProductValidateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                            data={'errors': serializer.errors})
+
+        # step 1: Receive data from Validated Data
+        title = serializer.validated_data.get('title')  # None
+        text = serializer.validated_data.get('text')
+        price = serializer.validated_data.get('price')
+        is_active = serializer.validated_data.get('is_active')  # Y
+        category_id = serializer.validated_data.get('category_id')
+        tags = serializer.validated_data.get('tags')
+
+        # step 2: Create product by received data
+        with transaction.atomic():
+            product = Product.objects.create(
+                title=title,
+                text=text,
+                price=price,
+                is_active=is_active,
+                category_id=category_id,
+            )
+            product.tags.set(tags)
+            product.save()
+
+        # step 3: Return Response as product (optional) and status
+        return Response(status=status.HTTP_201_CREATED,
+                        data={'id': product.id, 'title': product.title})
+
+
+class CustomPagination(PageNumberPagination):
+    def get_paginated_response(self, data):
+        return Response({
+            'total': self.page.paginator.count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data,
+        })
+
+
+class CategoryListCreateAPIView(ListCreateAPIView):  # GET->list, POST->create
+    queryset = Category.objects.all()  # List data from DB
+    serializer_class = CategorySerializer  # Serializer inherited by ModelSerializer
+    pagination_class = CustomPagination
+
+
+class CategoryDetailAPIView(RetrieveUpdateDestroyAPIView):  # GET->retrieve, PUT->update, DELETE->destroy
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    lookup_field = 'id'
+
+
+class TagModelViewSet(ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    pagination_class = CustomPagination
+    lookup_field = 'id'
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
