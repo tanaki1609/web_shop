@@ -1,0 +1,22 @@
+version: '3'
+services:
+  webshop:
+    build:
+      context: .
+    command: sh -c "python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8001:8000" # host:container
+    depends_on:
+      - webshop_db
+  webshop_db:
+    image: 'postgres:14'
+    environment:
+      POSTGRES_DB: webshop
+      POSTGRES_USER: admin_webshop
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - '5433:5432'
+    volumes:
+      - 'webshop-data:/var/lib/postgresql/data'
+volumes:
+  webshop-data:
